@@ -6,6 +6,7 @@ use sha1::Digest;
 
 use super::session::SessionInfo;
 use crate::err::JellyfinError;
+use crate::items::UserData;
 use crate::JellyfinClient;
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -543,6 +544,28 @@ pub struct UserItem {
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "PascalCase")]
+pub struct UserQueryItem{
+    pub name: String,
+    pub server_id: String,
+    pub id: String,
+    pub container: String,
+    pub channel_id: Option<String>,
+    pub run_time_ticks: i64,
+    pub is_folder: bool,
+    pub r#type: String,
+    pub user_data: UserData,
+    pub artists: Vec<String>,
+    pub artist_items: Vec<String>,
+    pub video_type: String,
+    pub image_tags: serde_json::Value,
+    pub backdrop_image_tags: Vec<String>,
+    pub image_blur_hashes: serde_json::Value,
+    pub location_type: String,
+    pub media_type: String,
+}
+
+#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "PascalCase")]
 pub struct UserConfiguration {
     pub audio_language_preference: Option<String>,
     pub play_default_audio_track: bool,
@@ -985,6 +1008,34 @@ impl JellyfinClient {
 
         Ok(req.json().await?)
     }
+
+    pub async fn query_user_items(&self, user_id: &str, limit: &str, start_index: &str, parent_id: &str) -> std::result::Result<UserItemsQuery, Self::Error> {
+        let req = self.client.get(format!(
+            "{}Users/{}/Items",
+            self.url,
+            user_id,
+        )).query(&[("limit", limit), ("startIndex", start_index), ("parentId", parent_id), ("sortBy", "IsFolder%2CSortName"), ("sortOrder", "Ascending")])
+            .header(
+                "X-Emby-Authorization",
+                self.auth
+                    .as_ref()
+                    .ok_or(JellyfinError::AuthNotFound)?
+                    .to_emby_header(),
+            )
+            .send()
+            .await?;
+
+        // panic!("{:?}", req.text().await?);
+        Ok(req.json().await?)
+    }
+}
+
+#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "PascalCase")]
+pub struct UserItemsQuery {
+    pub items: Vec<UserQueryItem>,
+    pub total_record_count: i64,
+    pub start_index: i64,
 }
 
 #[cfg(test)]
