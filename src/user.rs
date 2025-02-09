@@ -1009,7 +1009,7 @@ impl JellyfinClient {
         Ok(req.json().await?)
     }
 
-    pub async fn query_user_items(&self, user_id: &str, limit: &str, start_index: &str, parent_id: &str) -> std::result::Result<UserItemsQuery, Self::Error> {
+    pub async fn query_user_items(&self, user_id: &str, limit: &str, start_index: &str, parent_id: &str) -> Result<UserItemsQuery> {
         let req = self.client.get(format!(
             "{}Users/{}/Items",
             self.url,
